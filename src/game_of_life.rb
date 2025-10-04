@@ -3,24 +3,33 @@
 
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-require "bundler/setup"
-require "set"
+require 'bundler/setup'
 
-require_relative "window_handler"
-require_relative "draw_primitives"
+require_relative 'window_handler'
+require_relative 'draw_primitives'
 
 class GameOfLife
   include DrawingPrimitives
+
   attr_reader :all_tiles, :window
   attr_accessor :paused
-  def initialize(density_modifier = 20, tick_speed: 10, scale: 10, world_size: [800, 800], colors: {bg: :black, tiles: :white}, wrap: true, **kwargs)
+
+  def initialize( # rubocop:disable Metrics/MethodLength,Metrics/AbcSize,Metrics/ParameterLists
+    density_modifier: 20,
+    tick_speed: 10,
+    scale: 10,
+    world_size: [800, 800],
+    colors: { bg: :black, tiles: :white },
+    wrap: true,
+    **
+  )
     @tick_speed = tick_speed
     @paused = true
     @world = Set.new
     @tile_size = scale
     @wrap = wrap
-    @colors = colors.map { |layer, color| [layer, Gosu::Color.const_get(color.upcase)] }.to_h
-    @window = Window.new(**kwargs)
+    @colors = colors.transform_values { |color| Gosu::Color.const_get(color.upcase) }
+    @window = Window.new(**)
 
     @max_world_size = world_size
     @all_tiles = [(0...@max_world_size[0]).to_a, (0...@max_world_size[1]).to_a].reduce(&:product)
@@ -44,10 +53,13 @@ class GameOfLife
 
   def random_tile = [rand(0...@max_world_size[0]), rand(0...@max_world_size[1])]
 
-  def neighbors_for(tile)
+  def neighbors_for(tile) # rubocop:disable Metrics/MethodLength,Metrics/AbcSize
     x, y = *tile
     if @wrap
-      x_minus_one, x_plus_one, y_minus_one, y_plus_one = x - 1, x + 1, y - 1, y + 1
+      x_minus_one = x - 1
+      x_plus_one = x + 1
+      y_minus_one = y - 1
+      y_plus_one = y + 1
       case x
       when 0
         x_minus_one = @max_world_size[0] - 1
@@ -87,12 +99,12 @@ class GameOfLife
   end
 
   # Update Game of Life world.
-  def world_tick
+  def world_tick # rubocop:disable Metrics/MethodLength
     new_world = Set.new
     coords_to_check = @world.to_a + @world.flat_map { |x, y| neighbors_for [x, y] }.uniq
     coords_to_check.each do |tile|
       # puts "#{tile.inspect}: #{neighbors_for(tile).inspect}\n"
-      case neighbors_for(tile).filter { @world.include? _1 }.size
+      case neighbors_for(tile).filter { @world.include? it }.size
       when 2
         if @world.include?(tile) then (new_world << tile) end
       when 3
@@ -100,15 +112,11 @@ class GameOfLife
       end
     end
 
-    # NOTE: This line dereferences the existing @world Set.
-    # For memory optimization purposes, may need to trigger
-    # the GC afterwards.
     @world = new_world
-    # GC.start
   end
 
   # Handle button presses.
-  def define_button_press_handlers
+  def define_button_press_handlers # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
     @window.define_button_press_handler(Gosu::KB_ESCAPE) { @window.close }
     @window.define_button_press_handler(Gosu::KB_SPACE) { @paused = !@paused }
     @window.define_button_press_handler(Gosu::KB_RETURN) { world_tick }
@@ -130,8 +138,8 @@ class GameOfLife
   end
 
   # Define draw steps.
-  def define_draw_steps
-    @window.add_draw_step(:background) do |window|
+  def define_draw_steps # rubocop:disable Metrics/MethodLength,Metrics/AbcSize
+    @window.add_draw_step(:background) do |_window|
       Gosu.draw_rect(
         @window.camera_x, @window.camera_y,
         @window.width, @window.height,
@@ -139,7 +147,7 @@ class GameOfLife
       )
     end
 
-    @window.add_draw_step(:game_of_life_tiles) do |window|
+    @window.add_draw_step(:game_of_life_tiles) do |_window|
       @world.each do |x_value, y_value|
         Gosu.draw_rect(
           x_value * @tile_size,
@@ -150,22 +158,24 @@ class GameOfLife
       end
     end
 
-    @window.add_draw_step(:header) do |window|
+    @window.add_draw_step(:header) do |_window|
       border_thickness = 4
       y_term = (@window.height * 0.2).round
 
-      draw_rect_with_outline(@window.camera_x, @window.camera_y, @window.width, y_term, @colors[:box], border_thickness: border_thickness, border_color: @colors[:box_border])
+      draw_rect_with_outline(@window.camera_x, @window.camera_y, @window.width, y_term, @colors[:box],
+                             border_thickness: border_thickness, border_color: @colors[:box_border])
     end
   end
 
   # Define update steps.
   def define_update_steps
     @window.add_update_step(:pause_gol) do |window|
-      if (window.tick_count % (60 / @tick_speed).to_i == 0) && !@paused then world_tick end
+      # world_tick if (window.tick_count % (60 / @tick_speed).to_i == 0) && !@paused
+      world_tick unless @paused
     end
   end
 
   def show = @window.show
 
-  def inspect = "#<GameOfLife>"
+  def inspect = '#<GameOfLife>'
 end

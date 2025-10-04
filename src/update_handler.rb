@@ -8,7 +8,7 @@ module UpdateHandler
   def update
     @tick_count ||= 0
     @tick_count += 1
-    @update_steps.each { |name, step| step[self] }
+    @update_steps.each_value { it[self] }
   end
 
   # Adds a named block to run during the update sequence.

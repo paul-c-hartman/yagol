@@ -3,10 +3,10 @@
 
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-require_relative "update_handler"
+require_relative 'update_handler'
 
 module ButtonHandler
-  def self.included(base)
+  def self.included(base) # rubocop:disable Metrics/MethodLength
     base.class_eval { include UpdateHandler }
 
     base.send(:alias_method, :_old_init_with_bitmask_from_include_ButtonHandler, :initialize_with_bitmask)
@@ -19,9 +19,7 @@ module ButtonHandler
       # Implements button down handlers
       add_update_step(:button_down_handlers) do |window|
         @button_down_handlers.each do |keys, handler|
-          if keys.any? { Gosu.button_down? _1 }
-            handler[window]
-          end
+          handler[window] if keys.any? { Gosu.button_down? it }
         end
       end
     end

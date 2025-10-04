@@ -3,10 +3,10 @@
 
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-require "bundler/setup"
-require "gosu"
+require 'bundler/setup'
+require 'gosu'
 
-require_relative "button_handler"
+require_relative 'button_handler'
 
 class GameOfLife
   class Window < Gosu::Window
@@ -16,12 +16,14 @@ class GameOfLife
     attr_accessor :camera_x, :camera_y, :scale
 
     def initialize(width: 640, height: 480, resizable: true)
-      super width, height
+      super(width, height, false, 0.0)
       self.resizable = resizable
-      self.caption = "Game of Life"
+      self.caption = 'Game of Life'
 
-      @frame, @tick_count = 0, 0
-      @camera_x, @camera_y = 0, 0 #-2 * width, -2 * height
+      @frame = 0
+      @tick_count = 0
+      @camera_x = 0
+      @camera_y = 0 # -2 * width, -2 * height
       @draw_steps = {}
     end
 
@@ -29,7 +31,7 @@ class GameOfLife
     def draw
       @frame += 1
 
-      Gosu.translate(-@camera_x, -@camera_y) { @draw_steps.each { |name, step| step[self] } }
+      Gosu.translate(-@camera_x, -@camera_y) { @draw_steps.each_value { it[self] } }
     end
 
     # Adds a block to run during the draw sequence.
